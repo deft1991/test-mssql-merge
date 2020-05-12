@@ -1,0 +1,74 @@
+IF NOT EXISTS (
+  SELECT 1
+	FROM sys.tables t
+	JOIN sys.schemas s ON t.schema_id = s.schema_id
+	WHERE s.name = 'dbo' AND t.name = 'OutboundStatusType'
+)
+BEGIN
+  CREATE TABLE [dbo].[OutboundStatusType]
+  (
+    [OutboundStatusTypeID] SMALLINT NOT NULL, -- We don't need identity for this table
+    [Name] VARCHAR(64) NOT NULL,
+    [Description] VARCHAR(256) NOT NULL,
+    [IsTerminalState] BIT NOT NULL,
+    [CreatedDate] DATE NOT NULL,
+    [IsActive] BIT NOT NULL,
+    CONSTRAINT [PK_OutboundStatusType] PRIMARY KEY ([OutboundStatusTypeID]),
+    CONSTRAINT [UC_OutboundStatusType_Name] UNIQUE CLUSTERED ([Name])
+  )
+END
+
+
+IF NOT EXISTS (
+  SELECT 1
+	FROM sys.tables t
+	JOIN sys.schemas s ON t.schema_id = s.schema_id
+	WHERE s.name = 'dbo' AND t.name = 'Outbound'
+)
+BEGIN
+  CREATE TABLE [dbo].[Outbound]
+  (
+    [OutboundID] INT NOT NULL IDENTITY(1,1),
+--     [SmsRequestID] INT NOT NULL,
+    [VendorID] SMALLINT NOT NULL,
+    [VendorMessageID] VARCHAR(34) NULL,
+    [VendorMessagingServiceID] VARCHAR(34) NOT NULL,
+    [VendorAccountID] VARCHAR(34) NULL,
+    [OutboundStatusTypeID] SMALLINT NOT NULL,
+    [VendorErrorCode] VARCHAR(5) NULL, -- Can be null
+    [VendorErrorMessage] VARCHAR(128) NULL, -- Can be null
+    [CreatedDate] DATETIMEOFFSET(2) NOT NULL,
+    [UpdatedDate] DATETIMEOFFSET(2) NULL, -- Can be null
+    CONSTRAINT [PK_Outbound] PRIMARY KEY ([OutboundID]),
+    CONSTRAINT [FK_Outbound_OutboundStatusType] FOREIGN KEY ([OutboundStatusTypeID]) REFERENCES [OutboundStatusType]([OutboundStatusTypeID]),
+  )
+END
+
+IF NOT EXISTS (
+  SELECT 1
+	FROM sys.tables t
+	JOIN sys.schemas s ON t.schema_id = s.schema_id
+	WHERE s.name = 'dbo' AND t.name = 'OutboundStatusHistory'
+)
+BEGIN
+  CREATE TABLE [dbo].[OutboundStatusHistory]
+  (
+    [OutboundStatusHistoryID] BIGINT NOT NULL IDENTITY(1,1),
+    [OutboundID] INT NOT NULL,
+    [OutboundStatusTypeID] SMALLINT NOT NULL,
+    [VersionStartDate] DATETIMEOFFSET(2) NOT NULL,
+    [VersionEndDate] DATETIMEOFFSET(2) NULL, -- Can be null to show what is the latest record
+  );
+END
+
+INSERT INTO OutboundStatusType (OutboundStatusTypeID, Name, Description, IsTerminalState, CreatedDate, IsActive) VALUES (6, 'CARRIER_DELIVERED', 'The carrier delivered the message', 1, '2018-03-12', 1);
+INSERT INTO OutboundStatusType (OutboundStatusTypeID, Name, Description, IsTerminalState, CreatedDate, IsActive) VALUES (4, 'CARRIER_RECEIVING', 'The carrier is currently receiving a message', 0, '2018-03-12', 1);
+INSERT INTO OutboundStatusType (OutboundStatusTypeID, Name, Description, IsTerminalState, CreatedDate, IsActive) VALUES (3, 'CARRIER_SENDING', 'The carrier is currently sending the message', 0, '2018-03-12', 1);
+INSERT INTO OutboundStatusType (OutboundStatusTypeID, Name, Description, IsTerminalState, CreatedDate, IsActive) VALUES (7, 'CARRIER_UNDELIVERED', 'The carrier could not deliver the message', 1, '2018-03-12', 1);
+INSERT INTO OutboundStatusType (OutboundStatusTypeID, Name, Description, IsTerminalState, CreatedDate, IsActive) VALUES (8, 'FAILED', 'Something went wrong', 1, '2018-03-12', 1);
+INSERT INTO OutboundStatusType (OutboundStatusTypeID, Name, Description, IsTerminalState, CreatedDate, IsActive) VALUES (9, 'SMS_SENDING_DISABLED', 'The sms sending function is disabled and sms''s cannot be sent', 1, '2018-03-12', 1);
+INSERT INTO OutboundStatusType (OutboundStatusTypeID, Name, Description, IsTerminalState, CreatedDate, IsActive) VALUES (1, 'UNKNOWN', 'Unknown or un-mapped status from vendor', 1, '2018-03-12', 1);
+INSERT INTO OutboundStatusType (OutboundStatusTypeID, Name, Description, IsTerminalState, CreatedDate, IsActive) VALUES (2, 'VENDOR_QUEUED', 'In the vendors'' queues', 0, '2018-03-12', 1);
+INSERT INTO OutboundStatusType (OutboundStatusTypeID, Name, Description, IsTerminalState, CreatedDate, IsActive) VALUES (5, 'VENDOR_RECEIVED', 'The vendor received a response from the carrier', 0, '2018-03-12', 1);
+INSERT INTO OutboundStatusType (OutboundStatusTypeID, Name, Description, IsTerminalState, CreatedDate, IsActive) VALUES (10, 'VENDOR_REJECTED_REQUEST', 'The vendor rejected the request', 1, '2018-03-12', 1);
+INSERT INTO OutboundStatusType (OutboundStatusTypeID, Name, Description, IsTerminalState, CreatedDate, IsActive) VALUES (11, 'VENDOR_STATUS_NOT_PROVIDED', 'Occurs when the vendor has not provided a status that we can map from', 1, '2018-03-12', 1);
